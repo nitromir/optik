@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optik.net.ua — Демо голосового помічника</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Демо-баннер сверху */
+        .demo-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .demo-banner__left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .demo-banner__badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .demo-banner__text {
+            font-size: 14px;
+        }
+
+        .demo-banner__hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 13px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Iframe с сайтом */
+        .site-frame {
+            position: fixed;
+            top: 52px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 52px);
+            border: none;
+        }
+
+        /* Fallback если iframe заблокирован */
+        .fallback {
+            display: none;
+            position: fixed;
+            top: 52px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 52px);
+            background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            overflow: auto;
+        }
+
+        .fallback__content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .fallback__header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .fallback__logo {
+            font-size: 48px;
+            font-weight: 700;
+            color: #00A651;
+            margin-bottom: 10px;
+        }
+
+        .fallback__tagline {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .fallback__cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .fallback__card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+
+        .fallback__card:hover {
+            transform: translateY(-4px);
+        }
+
+        .fallback__card-icon { font-size: 40px; margin-bottom: 16px; }
+        .fallback__card-title { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 8px; }
+        .fallback__card-desc { font-size: 14px; color: #666; line-height: 1.6; }
+        .fallback__card-price { margin-top: 16px; font-size: 24px; font-weight: 700; color: #00A651; }
+
+        .fallback__cta {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .fallback__cta-title { font-size: 24px; font-weight: 600; margin-bottom: 16px; }
+        .fallback__cta-text { font-size: 16px; color: #666; margin-bottom: 24px; }
+
+        .fallback__cta-button {
+            display: inline-block;
+            background: #00A651;
+            color: white;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Подсказка рядом с виджетом */
+        .widget-hint {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.15);
+            z-index: 99998;
+            max-width: 280px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .widget-hint::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 30px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            transform: rotate(45deg);
+        }
+
+        .widget-hint__close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .widget-hint__title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .widget-hint__text { font-size: 13px; color: #666; line-height: 1.5; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ElevenLabs виджет */
+        elevenlabs-convai {
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            z-index: 99999 !important;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .demo-banner {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px 15px;
+            }
+            .site-frame, .fallback {
+                top: 85px;
+                height: calc(100vh - 85px);
+            }
+            .widget-hint {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                bottom: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Демо-баннер -->
+    <div class="demo-banner">
+        <div class="demo-banner__left">
+            <span class="demo-banner__badge">🎯 Demo</span>
+            <span class="demo-banner__text">
+                <strong>Голосовий ІІ-помічник</strong> для Optik.net.ua
+            </span>
+        </div>
+        <div class="demo-banner__hint">
+            🎙️ Натисніть на іконку мікрофона справа внизу →
+        </div>
+    </div>
+
+    <!-- Iframe с сайтом -->
+    <iframe 
+        id="siteFrame"
+        class="site-frame" 
+        src="https://optik.net.ua/ru/"
+        loading="eager"
+    ></iframe>
+
+    <!-- Fallback если iframe заблокирован -->
+    <div id="fallback" class="fallback">
+        <div class="fallback__content">
+            <div class="fallback__header">
+                <div class="fallback__logo">🌐 OPTIK</div>
+                <div class="fallback__tagline">Швидкий інтернет для вашого дому та бізнесу</div>
+            </div>
+
+            <div class="fallback__cards">
+                <div class="fallback__card">
+                    <div class="fallback__card-icon">🚀</div>
+                    <div class="fallback__card-title">Тариф "Старт"</div>
+                    <div class="fallback__card-desc">Швидкість до 100 Мбіт/с. Для серфінгу та соцмереж.</div>
+                    <div class="fallback__card-price">200 грн/міс</div>
+                </div>
+                <div class="fallback__card">
+                    <div class="fallback__card-icon">⚡</div>
+                    <div class="fallback__card-title">Тариф "Оптимальний"</div>
+                    <div class="fallback__card-desc">Швидкість до 300 Мбіт/с. Для роботи та ігор.</div>
+                    <div class="fallback__card-price">350 грн/міс</div>
+                </div>
+                <div class="fallback__card">
+                    <div class="fallback__card-icon">💎</div>
+                    <div class="fallback__card-title">Тариф "Максимум"</div>
+                    <div class="fallback__card-desc">Швидкість до 1 Гбіт/с. Для вимогливих.</div>
+                    <div class="fallback__card-price">500 грн/міс</div>
+                </div>
+            </div>
+
+            <div class="fallback__cta">
+                <div class="fallback__cta-title">🎙️ Спробуйте голосового помічника!</div>
+                <div class="fallback__cta-text">
+                    Натисніть на кнопку мікрофона в правому нижньому куті
+                </div>
+                <a href="https://optik.net.ua" target="_blank" class="fallback__cta-button">
+                    Відкрити сайт Optik →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подсказка -->
+    <div id="widgetHint" class="widget-hint">
+        <button class="widget-hint__close" onclick="this.parentElement.style.display='none'">×</button>
+        <div class="widget-hint__title">🎙️ Голосовий помічник</div>
+        <div class="widget-hint__text">
+            Натисніть на кнопку нижче, щоб поговорити з ІІ-консультантом!
+        </div>
+    </div>
+
+    <!-- ElevenLabs Widget -->
+    <elevenlabs-convai agent-id="agent_9001khkdv0g3ersry6sr7a1k2w2g"></elevenlabs-convai>
+    <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+    <script>
+        const iframe = document.getElementById('siteFrame');
+        const fallback = document.getElementById('fallback');
+
+        // Если iframe не загрузился за 3 сек — показываем fallback
+        setTimeout(() => {
+            try {
+                if (!iframe.contentWindow.document) throw new Error();
+            } catch (e) {
+                iframe.style.display = 'none';
+                fallback.style.display = 'block';
+            }
+        }, 3000);
+
+        // Скрываем подсказку через 10 сек
+        setTimeout(() => {
+            document.getElementById('widgetHint').style.opacity = '0';
+            setTimeout(() => document.getElementById('widgetHint').style.display = 'none', 500);
+        }, 10000);
+    </script>
+</body>
+</html>
